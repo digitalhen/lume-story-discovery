@@ -1,0 +1,62 @@
+{
+  "manifest_version": 2,
+  "name": "Local Discovery",
+  "version": "0.1.0",
+  "description": "On-device content discovery. Reads pages locally, embeds them with a small sentence-transformer model, and recommends related stories from a pre-loaded corpus. Nothing leaves your machine.",
+
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "local-discovery@henry.local",
+      "strict_min_version": "115.0"
+    }
+  },
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "<all_urls>"
+  ],
+
+  "background": {
+    "page": "background/background.html",
+    "persistent": true
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "exclude_matches": [
+        "*://*.gmail.com/*",
+        "*://accounts.google.com/*",
+        "*://localhost/*",
+        "*://127.0.0.1/*"
+      ],
+      "js": ["content/content-script.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+
+  "browser_action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png"
+    },
+    "default_title": "Discovery"
+  },
+
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "web_accessible_resources": [
+    "content/popup.css",
+    "lib/ort-wasm-simd-threaded.jsep.wasm"
+  ],
+
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://*.huggingface.co"
+}
