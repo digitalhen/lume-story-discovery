@@ -4,9 +4,9 @@
 // Trigger: 20s foreground dwell AND scroll depth >= 25%, OR pagehide after 10s.
 
 (() => {
-  const DWELL_TRIGGER_MS = 20_000;
-  const DWELL_UNLOAD_MIN_MS = 10_000;
-  const SCROLL_TRIGGER_PCT = 0.25;
+  const DWELL_TRIGGER_MS = 5_000;
+  const DWELL_UNLOAD_MIN_MS = 3_000;
+  const SCROLL_TRIGGER_PCT = 0.001; // any user scroll
   const MAX_TEXT = 1000;
 
   if (window.__discoCaptureBooted) return;
