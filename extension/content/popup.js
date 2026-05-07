@@ -93,7 +93,15 @@
   }
 
   function setResult({ title, url, source, score }) {
+    const attached = host && document.documentElement.contains(host);
+    console.log("[disco/popup] setResult enter, host attached:", attached, "root:", !!root);
     if (!root) return;
+    if (!attached) {
+      // Page yanked our host (SPA route change, framework re-render, etc.) —
+      // re-attach so the popup actually gets seen.
+      console.log("[disco/popup] re-attaching host");
+      document.documentElement.appendChild(host);
+    }
     root.querySelector(".result-source").textContent = source || "Reuters";
     const pct = Math.max(0, Math.min(1, score || 0));
     root.querySelector(".score").textContent = `${(pct * 100).toFixed(0)}%`;
@@ -106,7 +114,11 @@
     open.textContent = "Open";
     setStatus("Read next");
     setState("result");
+    const wrap = root.querySelector(".wrap");
+    if (!wrap.classList.contains("show")) wrap.classList.add("show");
     resetDismissTimer();
+    const r = wrap.getBoundingClientRect();
+    console.log("[disco/popup] setResult done, classes:", wrap.className, "rect:", r.width + "x" + r.height, "@", r.left + "," + r.top);
   }
 
   function dismiss() {
