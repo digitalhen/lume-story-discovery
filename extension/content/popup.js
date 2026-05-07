@@ -103,7 +103,7 @@
     open.href = url || "#";
     open.style.display = url ? "" : "none";
     open.textContent = "Open";
-    setStatus("Related from your corpus");
+    setStatus("Read next");
     setState("result");
     resetDismissTimer();
   }
