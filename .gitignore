@@ -12,3 +12,6 @@ tools/build-corpus/node_modules/
 # Editor
 .vscode/
 .idea/
+
+# Build artifacts
+dist/
