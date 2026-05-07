@@ -1,0 +1,13 @@
+# Source dump (large, derivable via prepare_articles.py)
+henry-en.2026-04-16.json
+
+# Node
+node_modules/
+package-lock.json
+
+# OS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
