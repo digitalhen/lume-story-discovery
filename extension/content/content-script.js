@@ -143,7 +143,12 @@
 
     // Open the popup immediately so the user sees the local-processing state
     // BEFORE the embed completes — that visible state is the product.
-    if (reason !== "unload") window.__discoPopup?.open();
+    if (reason !== "unload") {
+      // Probe model readiness so we can label the wait honestly on cold start.
+      browser.runtime.sendMessage({ type: "ping" })
+        .then((p) => window.__discoPopup?.open({ modelLoading: p && !p.ready }))
+        .catch(() => window.__discoPopup?.open());
+    }
 
     browser.runtime.sendMessage(payload).then((res) => {
       if (res?.ok) {

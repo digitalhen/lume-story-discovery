@@ -125,15 +125,15 @@
   }
 
   async function muteCurrentSite() {
-    let host = null;
-    try { host = location.hostname; } catch {}
-    if (!host) return;
-    try { await browser.runtime.sendMessage({ type: "muteSite", domain: host }); } catch {}
+    let domain = null;
+    try { domain = location.hostname; } catch {}
+    if (!domain) return;
+    try { await browser.runtime.sendMessage({ type: "muteSite", domain }); } catch {}
     dismiss();
   }
 
   window.__discoPopup = {
-    async open() {
+    async open(opts = {}) {
       openedAt = performance.now();
       await ensureMounted();
       setState("extracting");
@@ -141,7 +141,14 @@
       // Brief extracting state so it's actually perceptible.
       await new Promise((r) => setTimeout(r, 250));
       setState("embedding");
+      setStatus(opts.modelLoading ? "Setting up model (one-time)…" : "Embedding…");
+    },
+
+    setEmbedding() {
+      if (!root) return;
+      setState("embedding");
       setStatus("Embedding…");
+      embeddingShownAt = performance.now();
     },
 
     async showResult(related) {

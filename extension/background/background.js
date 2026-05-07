@@ -1,7 +1,8 @@
 import { warmUp, embed, isReady, modelName } from "./embedder.js";
 import {
   initDB, putPage, getAllPages, countPages, clearAllPages,
-  approxStorageBytes, addBlockedDomain, getBlockedDomains, isDomainBlocked,
+  approxStorageBytes, addBlockedDomain, removeBlockedDomain,
+  getBlockedDomains, isDomainBlocked,
 } from "./storage.js";
 import { loadCorpus, topMatch, recommend, isLoaded as corpusLoaded } from "./recommender.js";
 
@@ -61,6 +62,9 @@ browser.runtime.onMessage.addListener((msg, sender) => {
 
     case "muteSite":
       return addBlockedDomain(msg.domain).then(() => ({ ok: true }));
+
+    case "unmuteSite":
+      return removeBlockedDomain(msg.domain).then(() => ({ ok: true }));
 
     case "getStats":
       return Promise.all([countPages(), approxStorageBytes(), getBlockedDomains()])

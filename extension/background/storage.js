@@ -128,6 +128,15 @@ export async function getBlockedDomains() {
   });
 }
 
+export async function removeBlockedDomain(domain) {
+  const store = await tx(STORE_BLOCKLIST, "readwrite");
+  return new Promise((resolve, reject) => {
+    const r = store.delete(domain);
+    r.onsuccess = () => resolve();
+    r.onerror = () => reject(r.error);
+  });
+}
+
 export async function isDomainBlocked(domain) {
   const store = await tx(STORE_BLOCKLIST);
   return new Promise((resolve, reject) => {

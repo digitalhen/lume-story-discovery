@@ -85,6 +85,27 @@ h1 { font-size: 28px; margin: 0 0 6px; letter-spacing: -0.01em; }
 .because a { color: var(--fg); text-decoration: none; }
 .because a:hover { color: var(--accent); }
 
+.muted-title {
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--muted); margin: 32px 0 10px; font-weight: 600;
+}
+.muted-list {
+  list-style: none; padding: 0; margin: 0;
+  display: flex; flex-wrap: wrap; gap: 8px;
+}
+.muted-list li {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 999px; padding: 4px 4px 4px 10px;
+  font-size: 12px;
+}
+.muted-list button {
+  appearance: none; background: none; border: none; cursor: pointer;
+  color: var(--muted); font: inherit; font-size: 14px; line-height: 1;
+  width: 22px; height: 22px; border-radius: 50%;
+}
+.muted-list button:hover { color: var(--fg); background: var(--bar-bg); }
+
 footer {
   display: flex; align-items: center; gap: 16px;
   margin-top: 32px; padding-top: 18px; border-top: 1px solid var(--border);

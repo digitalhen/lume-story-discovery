@@ -4,6 +4,8 @@ const $emptyCount = document.getElementById("empty-count");
 const $grid = document.getElementById("grid");
 const $stats = document.getElementById("stats");
 const $clear = document.getElementById("clear");
+const $mutedSection = document.getElementById("muted-section");
+const $mutedList = document.getElementById("muted-list");
 
 const MIN_PAGES_FOR_RECS = 5;
 
@@ -57,6 +59,24 @@ function renderCard({ article, score, becauseYouRead }) {
   `;
 }
 
+function renderMuted(domains) {
+  if (!domains?.length) {
+    $mutedSection.hidden = true;
+    return;
+  }
+  $mutedSection.hidden = false;
+  $mutedList.innerHTML = domains.map((d) =>
+    `<li>${escapeHtml(d)} <button data-domain="${escapeHtml(d)}" aria-label="Unmute ${escapeHtml(d)}">×</button></li>`
+  ).join("");
+}
+
+$mutedList.addEventListener("click", async (e) => {
+  const btn = e.target.closest("button[data-domain]");
+  if (!btn) return;
+  await browser.runtime.sendMessage({ type: "unmuteSite", domain: btn.dataset.domain });
+  refresh();
+});
+
 async function refresh() {
   $loading.hidden = false;
   $grid.hidden = true;
@@ -64,8 +84,8 @@ async function refresh() {
 
   const stats = await browser.runtime.sendMessage({ type: "getStats" });
   $stats.textContent =
-    `${stats.count} pages embedded · ${fmtBytes(stats.bytes)} · ${stats.modelReady ? "model ready" : "model loading"}` +
-    (stats.blocked.length ? ` · ${stats.blocked.length} muted site(s)` : "");
+    `${stats.count} pages embedded · ${fmtBytes(stats.bytes)} · ${stats.modelReady ? "model ready" : "model loading"}`;
+  renderMuted(stats.blocked);
 
   if (stats.count < MIN_PAGES_FOR_RECS) {
     $emptyCount.textContent = String(stats.count);
