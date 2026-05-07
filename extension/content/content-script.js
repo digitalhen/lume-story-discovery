@@ -140,20 +140,24 @@
       reason,
     };
     console.log("[disco/cs] firing capture:", reason, text.length, "chars");
+
+    // Open the popup immediately so the user sees the local-processing state
+    // BEFORE the embed completes — that visible state is the product.
+    if (reason !== "unload") window.__discoPopup?.open();
+
     browser.runtime.sendMessage(payload).then((res) => {
       if (res?.ok) {
         console.log("[disco/cs] captured ok", res.related ? `→ ${res.related.title}` : "");
-        showPopup(res);
+        if (reason !== "unload") window.__discoPopup?.showResult(res.related);
       } else {
         console.log("[disco/cs] capture skipped:", res?.reason || res?.error);
+        if (reason !== "unload") window.__discoPopup?.error();
       }
     }).catch((e) => {
       console.warn("[disco/cs] capture error:", e);
+      if (reason !== "unload") window.__discoPopup?.error();
     });
   }
-
-  // Phase 2 stub — replaced in Phase 4.
-  function showPopup(_res) { /* no-op */ }
 
   // First-pass scroll measurement so a pre-scrolled page starts above 0.
   updateScroll();

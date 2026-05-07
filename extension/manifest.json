@@ -31,7 +31,7 @@
         "*://localhost/*",
         "*://127.0.0.1/*"
       ],
-      "js": ["content/content-script.js"],
+      "js": ["content/popup.js", "content/content-script.js"],
       "run_at": "document_idle",
       "all_frames": false
     }

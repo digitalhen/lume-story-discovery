@@ -4,6 +4,7 @@ henry-en.2026-04-16.json
 # Node
 node_modules/
 package-lock.json
+tools/build-corpus/node_modules/
 
 # OS
 .DS_Store
