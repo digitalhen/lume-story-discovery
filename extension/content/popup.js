@@ -17,6 +17,7 @@
   let openedAt = 0;
   let embeddingShownAt = 0;
   let cssText = null;
+  let openPromise = null;
 
   async function loadCSS() {
     if (cssText != null) return cssText;
@@ -133,32 +134,33 @@
   }
 
   window.__discoPopup = {
-    async open(opts = {}) {
-      openedAt = performance.now();
-      await ensureMounted();
-      setState("extracting");
-      setStatus("Reading this page locally…");
-      // Brief extracting state so it's actually perceptible.
-      await new Promise((r) => setTimeout(r, 250));
-      setState("embedding");
-      setStatus(opts.modelLoading ? "Setting up model (one-time)…" : "Embedding…");
-    },
-
-    setEmbedding() {
-      if (!root) return;
-      setState("embedding");
-      setStatus("Embedding…");
-      embeddingShownAt = performance.now();
+    open(opts = {}) {
+      openPromise = (async () => {
+        openedAt = performance.now();
+        await ensureMounted();
+        setState("extracting");
+        setStatus("Reading this page locally…");
+        // Brief extracting state so it's actually perceptible.
+        await new Promise((r) => setTimeout(r, 250));
+        setState("embedding");
+        setStatus(opts.modelLoading ? "Setting up model (one-time)…" : "Embedding…");
+      })();
+      return openPromise;
     },
 
     async showResult(related) {
-      // Pad embedding state if real time was too fast to see.
+      console.log("[disco/popup] showResult:", related?.title || "(no related)");
+      // Wait for open() to finish so we don't race the embedding state.
+      if (openPromise) {
+        try { await openPromise; } catch {}
+      }
+      // Pad embedding state if the real embed was too fast to see.
       const elapsed = performance.now() - embeddingShownAt;
       if (elapsed < MIN_EMBEDDING_VISIBLE_MS) {
         await new Promise((r) => setTimeout(r, MIN_EMBEDDING_VISIBLE_MS - elapsed));
       }
-      if (!root) return; // dismissed mid-flight
-      if (!related) { dismiss(); return; }
+      if (!root) { console.log("[disco/popup] no root, skipping"); return; }
+      if (!related) { console.log("[disco/popup] no related, dismissing"); dismiss(); return; }
       setResult(related);
     },
 
