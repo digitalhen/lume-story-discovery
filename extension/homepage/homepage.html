@@ -2,10 +2,33 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Discovery</title>
+<link rel="stylesheet" href="homepage.css">
 </head>
 <body>
-<h1>Discovery</h1>
-<p>Phase 1 stub — replaced in Phase 5.</p>
+  <header>
+    <h1>Discovery</h1>
+    <p class="sub">Stories matched to what you've been reading. <span class="muted">Nothing leaves your device.</span></p>
+  </header>
+
+  <main id="main">
+    <div id="loading">Loading recommendations…</div>
+    <div id="empty" hidden>
+      <p>Browse a few articles and come back.</p>
+      <p class="muted">Currently <span id="empty-count">0</span> pages embedded.</p>
+    </div>
+    <div id="grid" class="grid" hidden></div>
+  </main>
+
+  <footer>
+    <div id="stats" class="muted">…</div>
+    <div class="actions">
+      <a href="../debug/debug.html" target="_blank">Debug</a>
+      <button id="clear" class="danger">Clear all data</button>
+    </div>
+  </footer>
+
+<script src="homepage.js"></script>
 </body>
 </html>
