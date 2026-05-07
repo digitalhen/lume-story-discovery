@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Local Discovery — debug</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    margin: 0; padding: 24px; max-width: 1100px; margin-inline: auto;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .stats { color: #666; margin-bottom: 16px; font-size: 12px; }
+  .toolbar { display: flex; gap: 8px; margin-bottom: 16px; }
+  button {
+    background: none; border: 1px solid #ccc; border-radius: 4px;
+    padding: 4px 10px; cursor: pointer; font: inherit;
+  }
+  button.danger { color: #c0392b; border-color: #c0392b; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td {
+    text-align: left; padding: 6px 10px; border-bottom: 1px solid #2222;
+    vertical-align: top; font-size: 12px;
+  }
+  th { font-weight: 600; color: #888; }
+  td.url { max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  td.title { max-width: 360px; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .empty { color: #666; padding: 40px 0; text-align: center; }
+</style>
+</head>
+<body>
+  <h1>Local Discovery — debug</h1>
+  <div class="stats" id="stats">…</div>
+  <div class="toolbar">
+    <button id="refresh">Refresh</button>
+    <button id="recommend">Run recommendations</button>
+    <button id="clear" class="danger">Clear all data</button>
+  </div>
+  <table id="t">
+    <thead>
+      <tr>
+        <th>Captured</th><th>Title</th><th>Host</th><th>URL</th>
+        <th class="num">chars</th><th class="num">norm</th><th></th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+  <pre id="recs" style="margin-top:24px"></pre>
+<script src="debug.js"></script>
+</body>
+</html>
