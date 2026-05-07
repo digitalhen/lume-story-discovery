@@ -25,12 +25,28 @@ export function warmUp() {
   warmStartedAt = performance.now();
   console.log(`[disco] warming model ${MODEL}…`);
   warmingPromise = pipeline("feature-extraction", MODEL, {
+    dtype: "q8",
     progress_callback: (p) => {
-      if (p.status === "progress" && p.total) {
-        const pct = ((p.loaded / p.total) * 100).toFixed(0);
-        console.log(`[disco] model: ${p.file} ${pct}%`);
-      } else if (p.status === "ready") {
-        console.log(`[disco] model ready (${(performance.now() - warmStartedAt).toFixed(0)} ms)`);
+      switch (p.status) {
+        case "initiate":
+          console.log(`[disco] model: starting ${p.file}`);
+          break;
+        case "download":
+          console.log(`[disco] model: downloading ${p.file}`);
+          break;
+        case "progress":
+          if (p.total) {
+            const pct = ((p.loaded / p.total) * 100).toFixed(0);
+            const mb = (p.total / 1024 / 1024).toFixed(1);
+            console.log(`[disco] model: ${p.file} ${pct}% of ${mb} MB`);
+          }
+          break;
+        case "done":
+          console.log(`[disco] model: done ${p.file}`);
+          break;
+        case "ready":
+          console.log(`[disco] model ready (${(performance.now() - warmStartedAt).toFixed(0)} ms)`);
+          break;
       }
     },
   }).then((ex) => {
