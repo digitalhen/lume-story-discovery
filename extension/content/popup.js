@@ -112,8 +112,11 @@
     if (host && document.documentElement.contains(host)) return;
     host = document.createElement("div");
     host.id = HOST_ID;
-    document.documentElement.appendChild(host);
-    root = host.attachShadow({ mode: "closed" });
+    // Force the host out of any inherited flow.
+    host.style.cssText = "all: initial; position: fixed; right: 0; bottom: 0; z-index: 2147483647; width: 0; height: 0;";
+    (document.body || document.documentElement).appendChild(host);
+    // "open" so the user can inspect the contents via devtools.
+    root = host.attachShadow({ mode: "open" });
     root.innerHTML = `
       <style>${POPUP_CSS}</style>
       <div class="wrap extracting" role="status" aria-live="polite">
@@ -138,10 +141,32 @@
         </div>
       </div>
     `;
+    // Belt-and-suspenders inline styles in case the shadow stylesheet
+    // didn't apply (e.g., Firefox quirk on certain pages).
+    const wrap = root.querySelector(".wrap");
+    wrap.style.cssText = [
+      "position: fixed",
+      "right: 20px",
+      "bottom: 20px",
+      "width: 360px",
+      "min-height: 80px",
+      "padding: 16px 18px 14px",
+      "box-sizing: border-box",
+      "background: #ffffff",
+      "color: #1a1a1a",
+      "border: 1px solid #e3e3e3",
+      "border-radius: 14px",
+      "box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 12px 36px rgba(0,0,0,0.16)",
+      "font: 13px/1.45 -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif",
+      "opacity: 1",
+      "transform: none",
+      "z-index: 2147483000",
+      "display: block",
+    ].join("; ") + ";";
     root.querySelector(".close").addEventListener("click", dismiss);
     root.querySelector(".mute").addEventListener("click", muteCurrentSite);
     requestAnimationFrame(() => {
-      root.querySelector(".wrap").classList.add("show");
+      wrap.classList.add("show");
     });
     resetDismissTimer();
   }
@@ -185,7 +210,12 @@
     if (!wrap.classList.contains("show")) wrap.classList.add("show");
     resetDismissTimer();
     const r = wrap.getBoundingClientRect();
-    console.log("[disco/popup] setResult done, classes:", wrap.className, "rect:", r.width + "x" + r.height, "@", r.left + "," + r.top);
+    const cs = getComputedStyle(wrap);
+    console.log("[disco/popup] setResult done, classes:", wrap.className,
+      "rect:", r.width + "x" + r.height, "@", r.left + "," + r.top,
+      "computed:", cs.position, cs.width, cs.height, cs.display, "opacity:", cs.opacity);
+    console.log("[disco/popup] host in DOM:", document.documentElement.contains(host),
+      "host parent:", host.parentNode?.nodeName);
   }
 
   function dismiss() {
