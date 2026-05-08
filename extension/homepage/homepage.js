@@ -61,10 +61,10 @@ function thumbHtml(article, score) {
 
 function renderCard({ article, score, becauseYouRead }) {
   return `
-    <a class="card" href="${escapeAttr(article.url)}" target="_blank" rel="noopener">
+    <article class="card" data-href="${escapeAttr(article.url)}" tabindex="0">
       ${thumbHtml(article, score)}
       <div class="body">
-        <h2 class="title">${escapeHtml(article.title)}</h2>
+        <h2 class="title"><a href="${escapeAttr(article.url)}" target="_blank" rel="noopener">${escapeHtml(article.title)}</a></h2>
         <p class="because">Because you read <a href="${escapeAttr(becauseYouRead.url)}" target="_blank" rel="noopener" data-stop>${escapeHtml(becauseYouRead.title || becauseYouRead.url)}</a></p>
         <div class="footer">
           <span class="src-pill">
@@ -74,7 +74,7 @@ function renderCard({ article, score, becauseYouRead }) {
           <span class="date">${escapeHtml(fmtDate(article.published_at))}</span>
         </div>
       </div>
-    </a>
+    </article>
   `;
 }
 
@@ -90,8 +90,20 @@ function attachCardListeners() {
       img.replaceWith(ph);
     });
   });
-  $grid.querySelectorAll("a[data-stop]").forEach((a) => {
-    a.addEventListener("click", (e) => e.stopPropagation());
+  // Whole-card click → open the article. Inner anchors (title link,
+  // "because" link) keep working because we ignore clicks that originated
+  // on an anchor.
+  $grid.querySelectorAll(".card[data-href]").forEach((card) => {
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("a")) return;
+      window.open(card.dataset.href, "_blank", "noopener");
+    });
+    card.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        window.open(card.dataset.href, "_blank", "noopener");
+      }
+    });
   });
 }
 
