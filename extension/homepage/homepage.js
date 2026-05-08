@@ -8,7 +8,7 @@ const $mutedSection = document.getElementById("muted-section");
 const $mutedList = document.getElementById("muted-list");
 
 const MIN_PAGES_FOR_RECS = 5;
-const REUTERS_LOGO = browser.runtime.getURL("icons/reuters.png");
+const REUTERS_LOGO = browser.runtime.getURL("icons/reuters.svg");
 
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, (c) => ({
