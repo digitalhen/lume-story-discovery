@@ -109,10 +109,11 @@ async function handleCapture(msg, sender) {
     timestamp: Date.now(),
   });
 
-  // Find related corpus article
+  // Find related corpus article (excluding the page itself, in case the
+  // page is a Reuters article that's also in the corpus).
   let related = null;
   if (corpusLoaded()) {
-    const m = topMatch(vec);
+    const m = topMatch(vec, { excludeUrls: [url] });
     if (m) {
       related = {
         title: m.article.title,

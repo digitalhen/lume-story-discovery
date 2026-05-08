@@ -39,12 +39,27 @@ function dot(a, b) {
   return s;
 }
 
+function normalizeUrl(u) {
+  if (!u) return "";
+  try {
+    const x = new URL(u);
+    return (x.origin + x.pathname).replace(/\/$/, "").toLowerCase();
+  } catch {
+    return String(u).toLowerCase();
+  }
+}
+
 // Nearest article in the corpus to a single query vector.
-export function topMatch(queryVec) {
+// opts.excludeUrls: Iterable of URLs to skip (e.g., the current page).
+export function topMatch(queryVec, opts = {}) {
   if (!corpus) return null;
+  const excluded = new Set(
+    Array.from(opts.excludeUrls || []).map(normalizeUrl).filter(Boolean)
+  );
   let bestIdx = -1;
   let bestScore = -Infinity;
   for (let i = 0; i < corpus.length; i++) {
+    if (excluded.has(normalizeUrl(corpus[i].url))) continue;
     const s = dot(queryVec, corpus[i].embedding);
     if (s > bestScore) { bestScore = s; bestIdx = i; }
   }
@@ -84,6 +99,9 @@ export function recommend(historyPages, opts = {}) {
 
   if (!corpus || !historyPages || historyPages.length === 0) return [];
 
+  // Skip any corpus article whose URL the user has already captured.
+  const seen = new Set(historyPages.map((p) => normalizeUrl(p.url)).filter(Boolean));
+
   // For each corpus article, find max similarity to any history page,
   // and remember which history page produced that max.
   const N = corpus.length;
@@ -103,9 +121,12 @@ export function recommend(historyPages, opts = {}) {
     }
   }
 
-  // Top P candidates by bestScore
+  // Top P candidates by bestScore, dropping any the user has already read.
   const candidates = [];
-  for (let i = 0; i < N; i++) candidates.push({ idx: i, score: bestScore[i] });
+  for (let i = 0; i < N; i++) {
+    if (seen.has(normalizeUrl(corpus[i].url))) continue;
+    candidates.push({ idx: i, score: bestScore[i] });
+  }
   candidates.sort((a, b) => b.score - a.score);
   const top = candidates.slice(0, pool);
 
