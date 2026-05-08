@@ -8,6 +8,7 @@ const $mutedSection = document.getElementById("muted-section");
 const $mutedList = document.getElementById("muted-list");
 
 const MIN_PAGES_FOR_RECS = 5;
+const REUTERS_LOGO = browser.runtime.getURL("icons/reuters.png");
 
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, (c) => ({
@@ -31,13 +32,10 @@ function fmtDate(iso) {
 }
 
 function scoreToPct(s) {
-  // Cosine on normalized vectors lives in [-1,1] but in practice news embeddings
-  // for related content cluster in [0.2, 0.8]. Map [0, 0.8] → [0, 100%].
   return Math.max(0, Math.min(1, (s || 0) / 0.8));
 }
 
-// Deterministic gradient from a string, used as a placeholder when an article
-// has no image.
+// Deterministic gradient from a string for the missing-image placeholder.
 function colorFromString(s) {
   let h = 0;
   for (let i = 0; i < (s || "").length; i++) h = (h * 31 + s.charCodeAt(i)) | 0;
@@ -45,22 +43,43 @@ function colorFromString(s) {
   return `linear-gradient(135deg, hsl(${hue} 70% 45%), hsl(${(hue + 50) % 360} 80% 35%))`;
 }
 
-function thumbHtml(article) {
+function thumbHtml(article, score) {
   const initial = ((article.title || "·").trim()[0] || "·").toUpperCase();
+  const grad = colorFromString(article.title || article.id);
+  const scoreHtml = `<span class="score">${(scoreToPct(score) * 100).toFixed(0)}% match</span>`;
   if (article.image_url) {
-    // Inline-styled gradient as fallback colour visible behind the loading image.
-    return `<div class="thumb" style="background: ${colorFromString(article.title || article.id)}" data-fallback="${escapeAttr(initial)}">
+    return `<div class="thumb" style="background: ${grad}" data-fallback="${escapeAttr(initial)}">
       <img src="${escapeAttr(article.image_url)}" alt="" loading="lazy" />
+      ${scoreHtml}
     </div>`;
   }
-  return `<div class="thumb" style="background: ${colorFromString(article.title || article.id)}">
+  return `<div class="thumb" style="background: ${grad}">
     <div class="placeholder">${escapeHtml(initial)}</div>
+    ${scoreHtml}
   </div>`;
 }
 
+function renderCard({ article, score, becauseYouRead }) {
+  return `
+    <a class="card" href="${escapeAttr(article.url)}" target="_blank" rel="noopener">
+      ${thumbHtml(article, score)}
+      <div class="body">
+        <h2 class="title">${escapeHtml(article.title)}</h2>
+        <p class="because">Because you read <a href="${escapeAttr(becauseYouRead.url)}" target="_blank" rel="noopener" data-stop>${escapeHtml(becauseYouRead.title || becauseYouRead.url)}</a></p>
+        <div class="footer">
+          <span class="src-pill">
+            <img src="${escapeAttr(REUTERS_LOGO)}" alt="" width="16" height="16">
+            ${escapeHtml(article.source || "Reuters")}
+          </span>
+          <span class="date">${escapeHtml(fmtDate(article.published_at))}</span>
+        </div>
+      </div>
+    </a>
+  `;
+}
+
 function attachCardListeners() {
-  // Image error → swap in initial-letter placeholder.
-  $grid.querySelectorAll(".card .thumb img").forEach((img) => {
+  $grid.querySelectorAll(".thumb img").forEach((img) => {
     img.addEventListener("error", () => {
       const thumb = img.closest(".thumb");
       if (!thumb) return;
@@ -71,42 +90,13 @@ function attachCardListeners() {
       img.replaceWith(ph);
     });
   });
-  // Inner "because" link should not bubble to the card's outer <a>.
-  $grid.querySelectorAll(".because a").forEach((a) => {
+  $grid.querySelectorAll("a[data-stop]").forEach((a) => {
     a.addEventListener("click", (e) => e.stopPropagation());
   });
 }
 
-function renderCard({ article, score, becauseYouRead }, opts = {}) {
-  const featured = !!opts.featured;
-  const pct = scoreToPct(score);
-  const pctText = `${(pct * 100).toFixed(0)}%`;
-
-  return `
-    <a class="card${featured ? " featured" : ""}" href="${escapeAttr(article.url)}" target="_blank" rel="noopener">
-      ${thumbHtml(article)}
-      <div class="body">
-        <h2 class="title">${escapeHtml(article.title)}</h2>
-        ${featured ? `<p class="excerpt">${escapeHtml(article.body_excerpt || "")}</p>` : ""}
-        <div class="relevance" title="cosine similarity ${score.toFixed(3)}">
-          <div class="bar"><span style="width: ${pct * 100}%"></span></div>
-          <span class="pct">${pctText}</span>
-        </div>
-        <div class="footer">
-          <span class="src-pill"><span class="src-mark">R</span>${escapeHtml(article.source || "Reuters")}</span>
-          <span class="date">${escapeHtml(fmtDate(article.published_at))}</span>
-          <p class="because">Because you read <a href="${escapeAttr(becauseYouRead.url)}" target="_blank" rel="noopener">${escapeHtml(becauseYouRead.title || becauseYouRead.url)}</a></p>
-        </div>
-      </div>
-    </a>
-  `;
-}
-
 function renderMuted(domains) {
-  if (!domains?.length) {
-    $mutedSection.hidden = true;
-    return;
-  }
+  if (!domains?.length) { $mutedSection.hidden = true; return; }
   $mutedSection.hidden = false;
   $mutedList.innerHTML = domains.map((d) =>
     `<li>${escapeHtml(d)} <button data-domain="${escapeAttr(d)}" aria-label="Unmute ${escapeHtml(d)}">×</button></li>`
@@ -142,9 +132,7 @@ async function refresh() {
     $loading.textContent = `Couldn't load recommendations (${res?.reason || "unknown"}).`;
     return;
   }
-  const recs = res.recommendations;
-  const html = recs.map((r, i) => renderCard(r, { featured: i === 0 })).join("");
-  $grid.innerHTML = html;
+  $grid.innerHTML = res.recommendations.map(renderCard).join("");
   attachCardListeners();
   $loading.hidden = true;
   $grid.hidden = false;
