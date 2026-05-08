@@ -52,6 +52,7 @@ async function main() {
         source: "Reuters",
         published_at: a.date,
         url: a.url ? `https://www.reuters.com${a.url}` : "",
+        image_url: a.image_url || "",
         embedding: Array.from(v, (x) => Math.round(x * 1e6) / 1e6),
       });
     }
