@@ -40,9 +40,9 @@
     box-shadow: 0 1px 2px rgba(0,0,0,0.5), 0 14px 40px rgba(0,0,0,0.6); }
 }
 .head { display:flex; align-items:center; gap:8px; margin-bottom:6px; }
-.dot { width:8px; height:8px; border-radius:50%; background:#4f46e5; }
+.dot { width:8px; height:8px; border-radius:50%; background:#f59e0b; }
 .wrap.embedding .dot { animation: pulse 1.1s ease-in-out infinite; }
-.wrap.result .dot { background:#16a34a; }
+.wrap.result .dot { background:#f59e0b; }
 @keyframes pulse {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.5); opacity: 0.55; }
@@ -66,20 +66,20 @@
   .bar { background: rgba(255,255,255,0.08); }
 }
 .wrap.extracting .bar, .wrap.embedding .bar { display:block; }
-.bar > span { display:block; height:100%; width:30%; background:#4f46e5;
+.bar > span { display:block; height:100%; width:30%; background:#f59e0b;
   border-radius:999px; animation: slide 1.4s ease-in-out infinite; }
 @keyframes slide { 0% { margin-left:-30%; } 100% { margin-left:100%; } }
 .result { display:none; padding:10px 12px;
-  background: rgba(79,70,229,0.06);
-  border:1px solid rgba(79,70,229,0.2); border-radius:10px; margin-bottom:10px; }
+  background: rgba(245,158,11,0.06);
+  border:1px solid rgba(245,158,11,0.2); border-radius:10px; margin-bottom:10px; }
 @media (prefers-color-scheme: dark) {
-  .result { background: rgba(79,70,229,0.12); border-color: rgba(79,70,229,0.3); }
+  .result { background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.3); }
 }
 .wrap.result .result { display:block; }
 .result .src { font-size:11px; color:#888; text-transform:uppercase; letter-spacing:0.04em;
   margin-bottom:4px; display:flex; align-items:center; gap:8px; }
 .result .score { margin-left:auto; font-variant-numeric:tabular-nums;
-  background:#4f46e5; color:white; padding:1px 7px; border-radius:999px;
+  background:#f59e0b; color:white; padding:1px 7px; border-radius:999px;
   font-size:10.5px; letter-spacing:0; text-transform:none; }
 .result .title { font-size:14px; font-weight:500; line-height:1.35; margin-bottom:6px; }
 .result .title a { color:inherit; text-decoration:none; }
@@ -87,14 +87,14 @@
 .foot { display:flex; align-items:center; gap:12px; font-size:11px; }
 .foot a, .foot button { appearance:none; background:none; border:none;
   font:inherit; color:#666; cursor:pointer; padding:0; text-decoration:none; }
-.foot a:hover, .foot button:hover { color:#4f46e5; }
+.foot a:hover, .foot button:hover { color:#f59e0b; }
 @media (prefers-color-scheme: dark) {
   .foot a, .foot button { color:#999; }
-  .foot a:hover, .foot button:hover { color:#a5b4fc; }
+  .foot a:hover, .foot button:hover { color:#fde68a; }
 }
-.foot .open { margin-left:auto; background:#4f46e5; color:white;
+.foot .open { margin-left:auto; background:#f59e0b; color:white;
   padding:4px 12px; border-radius:999px; font-weight:500; }
-.foot .open:hover { background:#4338ca; color:white; text-decoration:none; }
+.foot .open:hover { background:#d97706; color:white; text-decoration:none; }
 .lock { display:inline-block; width:10px; height:10px; vertical-align:-1px; }
 `;
 
@@ -122,7 +122,7 @@
       <div class="wrap extracting" role="status" aria-live="polite">
         <div class="head">
           <div class="dot"></div>
-          <div class="label">Local Discovery</div>
+          <div class="label">Lume</div>
           <button class="close" aria-label="Dismiss">×</button>
         </div>
         <div class="status">Reading this page locally…</div>

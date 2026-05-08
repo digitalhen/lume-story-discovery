@@ -1,12 +1,12 @@
 {
   "manifest_version": 2,
-  "name": "Local Discovery",
+  "name": "Lume",
   "version": "0.1.0",
-  "description": "On-device content discovery. Reads pages locally, embeds them with a small sentence-transformer model, and recommends related stories from a pre-loaded corpus. Nothing leaves your machine.",
+  "description": "Lume — what to read next, locally. Reads pages on-device, embeds them with a small sentence-transformer model, and surfaces related stories from a pre-loaded corpus. Nothing leaves your machine after the one-time model download.",
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "local-discovery@henry.local",
+      "id": "lume@henry.local",
       "strict_min_version": "115.0"
     }
   },
@@ -43,7 +43,7 @@
       "32": "icons/icon-32.png",
       "48": "icons/icon-48.png"
     },
-    "default_title": "Discovery"
+    "default_title": "Lume — what to read next"
   },
 
   "icons": {
