@@ -4,7 +4,7 @@ import json
 import sys
 from pathlib import Path
 
-SRC = Path(__file__).parent / "henry-en.2026-04-16.json"
+SRC = Path(__file__).parent / "source-articles.json"
 DST = Path(__file__).parent / "articles.json"
 
 
