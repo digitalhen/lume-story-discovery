@@ -14,8 +14,7 @@
   "permissions": [
     "storage",
     "tabs",
-    "<all_urls>",
-    "https://*.workers.dev/*"
+    "<all_urls>"
   ],
 
   "background": {
@@ -59,5 +58,5 @@
     "lib/ort-wasm-simd-threaded.jsep.wasm"
   ],
 
-  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://*.workers.dev; img-src 'self' data: https:"
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://story-discovery-feed.digitalhen.workers.dev; img-src 'self' data: https://* http://*"
 }
