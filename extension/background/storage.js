@@ -1,7 +1,8 @@
 const DB_NAME = "local-discovery";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE_PAGES = "pages";
 const STORE_BLOCKLIST = "blocklist";
+const STORE_FEED_EMBEDDINGS = "feed_embeddings";
 
 let dbPromise = null;
 
@@ -17,6 +18,9 @@ function open() {
       }
       if (!db.objectStoreNames.contains(STORE_BLOCKLIST)) {
         db.createObjectStore(STORE_BLOCKLIST, { keyPath: "domain" });
+      }
+      if (!db.objectStoreNames.contains(STORE_FEED_EMBEDDINGS)) {
+        db.createObjectStore(STORE_FEED_EMBEDDINGS, { keyPath: "id" });
       }
     };
     req.onsuccess = () => resolve(req.result);
@@ -143,6 +147,60 @@ export async function isDomainBlocked(domain) {
     const r = store.get(domain);
     r.onsuccess = () => resolve(!!r.result);
     r.onerror = () => reject(r.error);
+  });
+}
+
+// ---- feed embeddings cache ----
+// Cached per-article embedding for the live feed. Keyed by stable article id.
+// Record shape: { id, embedding (Float32Array), cachedAt }
+
+export async function getFeedEmbeddings(ids) {
+  const store = await tx(STORE_FEED_EMBEDDINGS);
+  const want = new Set(ids);
+  return new Promise((resolve, reject) => {
+    const out = new Map();
+    const cursor = store.openCursor();
+    cursor.onsuccess = (e) => {
+      const c = e.target.result;
+      if (!c) { resolve(out); return; }
+      if (want.has(c.value.id)) out.set(c.value.id, c.value.embedding);
+      c.continue();
+    };
+    cursor.onerror = () => reject(cursor.error);
+  });
+}
+
+export async function putFeedEmbeddings(records) {
+  if (!records.length) return;
+  const db = await open();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(STORE_FEED_EMBEDDINGS, "readwrite");
+    const store = t.objectStore(STORE_FEED_EMBEDDINGS);
+    for (const r of records) {
+      store.put({ id: r.id, embedding: r.embedding, cachedAt: Date.now() });
+    }
+    t.oncomplete = () => resolve();
+    t.onerror = () => reject(t.error);
+  });
+}
+
+// Drop cached embeddings whose ids aren't in `keepIds`.
+export async function pruneFeedEmbeddings(keepIds) {
+  const keep = new Set(keepIds);
+  const db = await open();
+  return new Promise((resolve, reject) => {
+    const t = db.transaction(STORE_FEED_EMBEDDINGS, "readwrite");
+    const store = t.objectStore(STORE_FEED_EMBEDDINGS);
+    const cursor = store.openCursor();
+    let removed = 0;
+    cursor.onsuccess = (e) => {
+      const c = e.target.result;
+      if (!c) return;
+      if (!keep.has(c.value.id)) { c.delete(); removed++; }
+      c.continue();
+    };
+    t.oncomplete = () => resolve(removed);
+    t.onerror = () => reject(t.error);
   });
 }
 

@@ -1,35 +1,96 @@
-// Corpus loading + nearest-neighbor matching + MMR diversification.
+// Live feed loading + nearest-neighbor matching + MMR diversification.
+//
+// The feed is fetched from our Worker proxy (see worker/), which caches NewsAPI
+// top-headlines. Articles arrive without embeddings; we embed them client-side
+// on first encounter and cache the vectors in IndexedDB keyed by article id.
+
+import { FEED_URL } from "../config.js";
+import { embedBatch } from "./embedder.js";
+import {
+  getFeedEmbeddings, putFeedEmbeddings, pruneFeedEmbeddings,
+} from "./storage.js";
 
 const DIM = 384;
+// Min freshness: don't refetch the feed more often than this from the same
+// background context. The Worker also caches with its own cadence.
+const FEED_TTL_MS = 5 * 60 * 1000;
 
-let corpus = null;          // [{ id, title, body_excerpt, source, published_at, url, embedding (Float32Array) }]
+let corpus = null;          // [{ id, title, body_excerpt, source, published_at, url, image_url, embedding (Float32Array) }]
 let corpusVectors = null;    // Float32Array of length corpus.length * DIM
 let loadPromise = null;
+let lastLoadedAt = 0;
 
 export function isLoaded() { return corpus !== null; }
 export function corpusSize() { return corpus ? corpus.length : 0; }
+export function feedAge() {
+  return lastLoadedAt ? Date.now() - lastLoadedAt : null;
+}
 
-export async function loadCorpus() {
-  if (corpus) return corpus;
+function docText(a) {
+  return [a.title, a.description, a.body_excerpt].filter(Boolean).join("\n\n");
+}
+
+export async function loadCorpus({ force = false } = {}) {
+  if (corpus && !force && Date.now() - lastLoadedAt < FEED_TTL_MS) return corpus;
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
-    const url = browser.runtime.getURL("data/reuters-corpus.json");
     const t0 = performance.now();
-    const res = await fetch(url);
-    if (!res.ok) throw new Error(`corpus fetch failed: ${res.status}`);
-    const data = await res.json();
-    corpus = data;
-    corpusVectors = new Float32Array(data.length * DIM);
-    for (let i = 0; i < data.length; i++) {
-      const v = data[i].embedding;
-      if (!v || v.length !== DIM) throw new Error(`bad embedding at index ${i}`);
-      corpusVectors.set(v, i * DIM);
-      // also store as Float32Array on the article for convenience
-      data[i].embedding = corpusVectors.subarray(i * DIM, (i + 1) * DIM);
+    const res = await fetch(FEED_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`feed fetch failed: ${res.status}`);
+    const feed = await res.json();
+    const articles = Array.isArray(feed.articles) ? feed.articles : [];
+    if (!articles.length) throw new Error("feed has no articles");
+
+    const ids = articles.map((a) => a.id);
+    const cached = await getFeedEmbeddings(ids);
+
+    // Embed any article we don't already have a vector for.
+    const missing = [];
+    for (let i = 0; i < articles.length; i++) {
+      const a = articles[i];
+      const v = cached.get(a.id);
+      if (v && v.length === DIM) {
+        a.embedding = v;
+      } else {
+        missing.push(i);
+      }
     }
-    console.log(`[disco] corpus loaded: ${data.length} articles in ${(performance.now() - t0).toFixed(0)} ms`);
+    if (missing.length) {
+      const tEmbed = performance.now();
+      const vectors = await embedBatch(missing.map((i) => docText(articles[i])));
+      for (let k = 0; k < missing.length; k++) {
+        articles[missing[k]].embedding = vectors[k];
+      }
+      await putFeedEmbeddings(
+        missing.map((i, k) => ({ id: articles[i].id, embedding: vectors[k] }))
+      );
+      console.log(
+        `[disco] embedded ${missing.length} new feed articles in ` +
+        `${(performance.now() - tEmbed).toFixed(0)} ms`
+      );
+    }
+
+    // Pack into a contiguous Float32Array for fast dot products.
+    corpus = articles;
+    corpusVectors = new Float32Array(articles.length * DIM);
+    for (let i = 0; i < articles.length; i++) {
+      const v = articles[i].embedding;
+      if (!v || v.length !== DIM) throw new Error(`bad embedding for ${articles[i].id}`);
+      corpusVectors.set(v, i * DIM);
+      articles[i].embedding = corpusVectors.subarray(i * DIM, (i + 1) * DIM);
+    }
+    lastLoadedAt = Date.now();
+
+    // GC stale cached embeddings for articles that have aged out of the feed.
+    pruneFeedEmbeddings(ids).catch(() => {});
+
+    console.log(
+      `[disco] feed loaded: ${articles.length} articles ` +
+      `(${missing.length} new, ${articles.length - missing.length} cached) ` +
+      `in ${(performance.now() - t0).toFixed(0)} ms`
+    );
     return corpus;
-  })();
+  })().finally(() => { loadPromise = null; });
   return loadPromise;
 }
 

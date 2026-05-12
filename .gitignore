@@ -1,5 +1,5 @@
 # Source dump (large, derivable via prepare_articles.py)
-henry-en.2026-04-16.json
+source-articles.json
 
 # Node
 node_modules/
@@ -15,3 +15,7 @@ tools/build-corpus/node_modules/
 
 # Build artifacts
 dist/
+
+# Worker secrets / local state
+worker/.dev.vars
+worker/.wrangler/

@@ -1,20 +1,23 @@
-# Semantic search over Reuters — POCs
+# Story discovery — local AI
 
-Two related demos of fully on-device semantic search and content discovery
-over a corpus of ~1000 Reuters news articles, using
+Two related demos of on-device semantic content discovery, using
 [`Xenova/all-MiniLM-L6-v2`](https://huggingface.co/Xenova/all-MiniLM-L6-v2)
 embeddings via [transformers.js](https://github.com/huggingface/transformers.js).
+Captured pages, your embeddings, and similarity search all stay in the
+browser; only the live news feed and the one-time model download cross
+the network.
 
-After a one-time model download from HuggingFace, **no further network
-calls leave the machine** — articles, embeddings, and similarity search
-all run in the browser.
+The repo contains:
 
-The repo contains two artifacts on two branches:
-
-| Branch | What it is |
-|---|---|
-| `main` | A browser POC: search box → top-N hits, with side-by-side semantic / BM25 / RRF-hybrid columns. |
-| `firefox-extension` | A Firefox WebExtension that captures pages as you browse, embeds them locally, and recommends related Reuters stories — both as an in-page popup and a "Discovery" page. |
+- **`main`** (browser POC) — single-page semantic + BM25 + RRF search
+  over a static ~1000-article Reuters corpus.
+- **`extension/`** (Firefox extension "Lume") — captures pages as you
+  browse, embeds them locally, and recommends related stories from a
+  **live feed** of US top-headlines served by a tiny Cloudflare Worker
+  (`worker/`) that caches NewsAPI.
+- **`worker/`** — Cloudflare Worker proxy that pulls NewsAPI every 30
+  minutes and serves a cached `/feed.json` with CORS. The NewsAPI key
+  lives only on the Worker.
 
 ## `main` — the browser POC
 
@@ -52,40 +55,41 @@ articles.json           # 995 trimmed Reuters articles (~3 MB)
 prepare_articles.py     # flattens raw paginated JSON dump into articles.json
 ```
 
-## `firefox-extension` — the discovery extension
+## `extension/` — Lume, the discovery extension
 
-A Manifest V2 Firefox extension that demonstrates fully-local content
-discovery as you browse the regular web.
+A Manifest V2 Firefox extension that does local content discovery as
+you browse.
 
 - A **content script** detects when you've dwelled on a page (5+ seconds
   with at least one scroll) and extracts a lightweight signal: title,
   H1s, description, og:title, og:description.
 - A **background page** loads `Xenova/all-MiniLM-L6-v2` once on startup
-  (cached in IndexedDB after first download), embeds the captured text,
-  stores the page record, and looks up the nearest Reuters article from
-  a pre-loaded corpus.
+  (cached in IndexedDB after first download), embeds the captured text
+  locally, and stores the page record.
+- A **live feed** is fetched from the Worker (`worker/`) on demand,
+  embedded client-side on first encounter (cached in IndexedDB per
+  article id), and ranked against your recent history.
 - An **in-page popup** slides in bottom-right and walks through three
-  visible states — *Reading this page locally → Embedding → Read next* —
-  with a "Nothing leaves your device" caption. The visible local-processing
-  state is intentional: it's the demo, not a loading spinner.
-- A **Discovery page** (toolbar icon) shows 10 Reuters stories matched
-  to your recent browsing, diversified with greedy MMR (λ=0.7) and
-  annotated *"Because you read X"*.
+  visible states — *Reading this page locally → Embedding → Read next*.
+- A **Discovery page** (toolbar icon) shows 10 stories matched to your
+  recent browsing, diversified with greedy MMR (λ=0.7) and annotated
+  *"Because you read X"*.
 
-CSP allows only `huggingface.co` and `*.hf.co` (HuggingFace's Xet storage
-backend) — the model download is the only outbound traffic.
+CSP allows `huggingface.co` + `*.hf.co` (model download) and
+`*.workers.dev` (live feed) — those are the only outbound destinations.
 
 ### Layout
 
 ```
 extension/
 ├── manifest.json                 # MV2, CSP, permissions
+├── config.js                     # FEED_URL (edit after `wrangler deploy`)
 ├── background/
 │   ├── background.html           # ESM entry for module imports
 │   ├── background.js             # message router, capture handler
 │   ├── embedder.js               # transformers.js wrapper, q8 model
-│   ├── storage.js                # IndexedDB: pages + blocklist
-│   └── recommender.js            # corpus loading, top-1, MMR
+│   ├── storage.js                # IndexedDB: pages + blocklist + feed embeddings
+│   └── recommender.js            # live feed loading, top-1, MMR
 ├── content/
 │   ├── content-script.js         # dwell + scroll detection, extraction
 │   ├── popup.js                  # in-page popup (closed shadow DOM)
@@ -97,8 +101,6 @@ extension/
 ├── debug/
 │   ├── debug.html                # dev-only: inspect captured pages
 │   └── debug.js
-├── data/
-│   └── reuters-corpus.json       # 995 articles + 384-dim embeddings (~4 MB)
 ├── lib/
 │   ├── transformers.min.js       # vendored
 │   └── ort-wasm-simd-threaded.jsep.wasm   # vendored ONNX runtime WASM
@@ -107,6 +109,8 @@ extension/
 
 ### Try it locally
 
+0. Deploy the Worker first — see [`worker/README.md`](worker/README.md) —
+   then paste its URL into `extension/config.js` as `FEED_URL`.
 1. `about:debugging#/runtime/this-firefox` → **Load Temporary Add-on…**
 2. Pick `extension/manifest.json`
 3. Open the Browser Console (Cmd+Shift+J) or Inspect the background page.
@@ -132,17 +136,14 @@ Firefox restart). For permanent install you'd need to sign through AMO.
 
 ```
 tools/
-├── build-corpus/                 # node script — embeds articles.json into
-│   ├── build.mjs                 # extension/data/reuters-corpus.json,
-│   └── package.json              # using @huggingface/transformers v3.0.2
+├── build-corpus/                 # legacy — used to build a static
+│   ├── build.mjs                 # pre-embedded corpus for the extension.
+│   └── package.json              # The extension now uses the live feed.
 └── build-xpi.sh                  # zips extension/ into dist/local-discovery.xpi
 ```
 
-To regenerate the corpus (only needed if `articles.json` changes):
-
-```sh
-cd tools/build-corpus && npm install && node build.mjs
-```
+`build-corpus/` is kept for offline experimentation; the extension no
+longer reads `data/reuters-corpus.json`.
 
 ## Tech notes
 

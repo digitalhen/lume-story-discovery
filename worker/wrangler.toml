@@ -1,0 +1,17 @@
+name = "story-discovery-feed"
+main = "src/index.js"
+compatibility_date = "2024-09-23"
+
+# Cron: refresh every 30 minutes (48/day, well under the NewsAPI dev-tier 100/day limit).
+[triggers]
+crons = ["*/30 * * * *"]
+
+# KV namespace holding the cached feed.
+# Create with: wrangler kv:namespace create FEED_KV
+# Then paste the returned id below.
+[[kv_namespaces]]
+binding = "FEED_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Secrets (set via `wrangler secret put`):
+#   NEWSAPI_KEY  — from https://newsapi.org

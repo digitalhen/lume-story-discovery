@@ -11,7 +11,8 @@ rm -f "$OUT"
 cd "$REPO/extension"
 zip -qr "$OUT" . \
   -x "*.DS_Store" \
-  -x "*/node_modules/*"
+  -x "*/node_modules/*" \
+  -x "data/*"
 
 bytes=$(stat -f%z "$OUT" 2>/dev/null || stat -c%s "$OUT")
 mb=$(awk "BEGIN { printf \"%.1f\", $bytes/1024/1024 }")

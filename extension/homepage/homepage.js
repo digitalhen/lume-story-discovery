@@ -8,7 +8,6 @@ const $mutedSection = document.getElementById("muted-section");
 const $mutedList = document.getElementById("muted-list");
 
 const MIN_PAGES_FOR_RECS = 5;
-const REUTERS_LOGO = browser.runtime.getURL("icons/reuters.svg");
 
 function escapeHtml(s) {
   return (s || "").replace(/[&<>"']/g, (c) => ({
@@ -67,10 +66,7 @@ function renderCard({ article, score, becauseYouRead }) {
         <h2 class="title"><a href="${escapeAttr(article.url)}" target="_blank" rel="noopener">${escapeHtml(article.title)}</a></h2>
         <p class="because">Because you read <a href="${escapeAttr(becauseYouRead.url)}" target="_blank" rel="noopener" data-stop>${escapeHtml(becauseYouRead.title || becauseYouRead.url)}</a></p>
         <div class="footer">
-          <span class="src-pill">
-            <img src="${escapeAttr(REUTERS_LOGO)}" alt="" width="16" height="16">
-            ${escapeHtml(article.source || "Reuters")}
-          </span>
+          <span class="src-pill">${escapeHtml(article.source || "Unknown")}</span>
           <span class="date">${escapeHtml(fmtDate(article.published_at))}</span>
         </div>
       </div>

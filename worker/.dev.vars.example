@@ -1,0 +1,3 @@
+# Copy to .dev.vars for `wrangler dev` (gitignored).
+NEWSAPI_KEY=your-key-here
+REFRESH_TOKEN=any-random-string
