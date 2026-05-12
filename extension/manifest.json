@@ -6,7 +6,7 @@
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "lume@henry.local",
+      "id": "lume@cleartextlabs.com",
       "strict_min_version": "115.0"
     }
   },
