@@ -1,10 +1,6 @@
-# Source dump (large, derivable via prepare_articles.py)
-source-articles.json
-
 # Node
 node_modules/
 package-lock.json
-tools/build-corpus/node_modules/
 
 # OS
 .DS_Store
@@ -19,3 +15,6 @@ dist/
 # Worker secrets / local state
 worker/.dev.vars
 worker/.wrangler/
+
+# Legacy raw export from the deleted browser POC
+source-articles.json
