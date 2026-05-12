@@ -6,6 +6,11 @@ import {
 } from "./storage.js";
 import { loadCorpus, topMatch, recommend, isLoaded as corpusLoaded } from "./recommender.js";
 
+// Refresh the feed (and embed any new articles) on this cadence so the
+// Discovery page is always ready without a cold-start wait. The Worker
+// itself refreshes every 30 min, so 15 catches each tick.
+const FEED_REFRESH_MS = 15 * 60 * 1000;
+
 const DEFAULT_BLOCKLIST = new Set([
   "gmail.com", "mail.google.com", "accounts.google.com",
   "localhost", "127.0.0.1",
@@ -23,6 +28,12 @@ console.log("[disco] background starting");
   // Warm in parallel; don't block message routing.
   warmUp().catch(() => {});
   loadCorpus().catch((e) => console.warn("[disco] corpus not loaded yet:", e?.message));
+  // Periodic background refresh — pulls latest feed and embeds new articles.
+  setInterval(() => {
+    loadCorpus({ force: true })
+      .then((c) => console.log(`[disco] periodic refresh ok (${c.length} articles)`))
+      .catch((e) => console.warn("[disco] periodic refresh failed:", e?.message));
+  }, FEED_REFRESH_MS);
 })();
 
 browser.browserAction.onClicked.addListener(async () => {
