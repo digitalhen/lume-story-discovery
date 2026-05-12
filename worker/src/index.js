@@ -6,8 +6,14 @@
 //
 // The NewsAPI key never leaves the Worker.
 
-const NEWSAPI_URL =
-  "https://newsapi.org/v2/top-headlines?country=us&pageSize=100";
+// Four NewsAPI top-headlines slices, merged + deduped. 4 reqs/hour × 24 = 96/day,
+// safely under the dev-tier 100/day limit.
+const FEED_QUERIES = [
+  { label: "general", url: "https://newsapi.org/v2/top-headlines?country=us&pageSize=100" },
+  { label: "technology", url: "https://newsapi.org/v2/top-headlines?country=us&category=technology&pageSize=100" },
+  { label: "business", url: "https://newsapi.org/v2/top-headlines?country=us&category=business&pageSize=100" },
+  { label: "science", url: "https://newsapi.org/v2/top-headlines?country=us&category=science&pageSize=100" },
+];
 const KV_KEY = "feed:current";
 
 export default {
@@ -49,7 +55,49 @@ export default {
 };
 
 async function refreshFeed(env) {
-  const res = await fetch(NEWSAPI_URL, {
+  const settled = await Promise.allSettled(
+    FEED_QUERIES.map((q) => fetchSlice(q, env))
+  );
+
+  const byUrl = new Map();
+  const counts = {};
+  const errors = [];
+  for (let i = 0; i < settled.length; i++) {
+    const q = FEED_QUERIES[i];
+    const s = settled[i];
+    if (s.status !== "fulfilled") {
+      errors.push({ slice: q.label, error: String(s.reason).slice(0, 200) });
+      counts[q.label] = 0;
+      continue;
+    }
+    counts[q.label] = s.value.length;
+    // First slice to mention an article wins (preserves NewsAPI's per-slice ranking).
+    for (const a of s.value) {
+      if (a.url && !byUrl.has(a.url)) {
+        byUrl.set(a.url, { ...a, _slice: q.label });
+      }
+    }
+  }
+
+  const articles = Array.from(byUrl.values()).sort(
+    (a, b) => (b.published_at || "").localeCompare(a.published_at || "")
+  );
+
+  const out = {
+    fetched_at: new Date().toISOString(),
+    source: "newsapi:top-headlines:us:multi",
+    slices: counts,
+    errors: errors.length ? errors : undefined,
+    article_count: articles.length,
+    articles,
+  };
+
+  await env.FEED_KV.put(KV_KEY, JSON.stringify(out));
+  return out;
+}
+
+async function fetchSlice({ url }, env) {
+  const res = await fetch(url, {
     headers: {
       "X-Api-Key": env.NEWSAPI_KEY,
       "User-Agent": "story-discovery-localai/0.1 (+https://github.com/digitalhen/story-discovery-localai)",
@@ -60,19 +108,7 @@ async function refreshFeed(env) {
     throw new Error(`NewsAPI ${res.status}: ${body.slice(0, 200)}`);
   }
   const data = await res.json();
-  const articles = (data.articles || [])
-    .map(normalize)
-    .filter(Boolean);
-
-  const out = {
-    fetched_at: new Date().toISOString(),
-    source: "newsapi:top-headlines:us",
-    article_count: articles.length,
-    articles,
-  };
-
-  await env.FEED_KV.put(KV_KEY, JSON.stringify(out));
-  return out;
+  return (data.articles || []).map(normalize).filter(Boolean);
 }
 
 function normalize(a) {

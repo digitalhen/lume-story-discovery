@@ -8,8 +8,8 @@ import { loadCorpus, topMatch, recommend, isLoaded as corpusLoaded } from "./rec
 
 // Refresh the feed (and embed any new articles) on this cadence so the
 // Discovery page is always ready without a cold-start wait. The Worker
-// itself refreshes every 30 min, so 15 catches each tick.
-const FEED_REFRESH_MS = 15 * 60 * 1000;
+// refreshes hourly; 30 min here catches each tick shortly after it lands.
+const FEED_REFRESH_MS = 30 * 60 * 1000;
 
 const DEFAULT_BLOCKLIST = new Set([
   "gmail.com", "mail.google.com", "accounts.google.com",

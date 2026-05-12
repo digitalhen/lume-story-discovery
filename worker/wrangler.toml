@@ -3,9 +3,10 @@ main = "src/index.js"
 compatibility_date = "2024-09-23"
 workers_dev = true
 
-# Cron: refresh every 30 minutes (48/day, well under the NewsAPI dev-tier 100/day limit).
+# Cron: refresh hourly. 4 NewsAPI requests per refresh × 24 = 96/day, under the
+# dev-tier 100/day limit.
 [triggers]
-crons = ["*/30 * * * *"]
+crons = ["0 * * * *"]
 
 # KV namespace holding the cached feed.
 # Create with: wrangler kv:namespace create FEED_KV

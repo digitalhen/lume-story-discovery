@@ -67,5 +67,8 @@ Then `curl http://localhost:8787/feed.json`.
 
 ## Refresh cadence
 
-`crons = ["*/30 * * * *"]` in `wrangler.toml` — every 30 minutes, 48/day,
-well under NewsAPI's free dev-tier limit of 100 requests/day.
+`crons = ["0 * * * *"]` in `wrangler.toml` — hourly. Each refresh makes
+4 parallel NewsAPI calls (general, technology, business, science US
+top-headlines), so 4 × 24 = 96 requests/day, under the dev-tier 100/day
+limit. Articles are deduplicated by URL across slices and sorted by
+`publishedAt` desc.
