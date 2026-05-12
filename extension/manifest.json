@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Lume",
   "version": "0.1.0",
-  "description": "Lume — what to read next, locally. Reads pages on-device, embeds them with a small sentence-transformer model, and surfaces related stories from a pre-loaded corpus. Nothing leaves your machine after the one-time model download.",
+  "description": "Lume — what to read next, locally. Reads pages on-device, embeds them with a small sentence-transformer model, and ranks them against a live news feed. Embedding and similarity matching stay on your device.",
 
   "browser_specific_settings": {
     "gecko": {
