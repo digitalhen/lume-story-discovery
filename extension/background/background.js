@@ -120,11 +120,12 @@ async function handleCapture(msg, sender) {
     timestamp: Date.now(),
   });
 
-  // Find related corpus article (excluding the page itself, in case the
-  // page is a Reuters article that's also in the corpus).
+  // Find related corpus article, excluding everything the user has already
+  // captured — otherwise the popup can ping-pong: A→B, then B→A.
   let related = null;
   if (corpusLoaded()) {
-    const m = topMatch(vec, { excludeUrls: [url] });
+    const previouslyCaptured = (await getAllPages()).map((p) => p.url);
+    const m = topMatch(vec, { excludeUrls: previouslyCaptured });
     if (m) {
       related = {
         title: m.article.title,
