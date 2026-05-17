@@ -1,21 +1,34 @@
 // Live feed loading + nearest-neighbor matching + MMR diversification.
 //
-// The feed is fetched from our Worker proxy (see worker/), which caches NewsAPI
-// top-headlines. Articles arrive without embeddings; we embed them client-side
-// on first encounter and cache the vectors in IndexedDB keyed by article id.
+// The feed is fetched from Pocket's public GraphQL API (getSections).
+// Articles arrive without embeddings; we embed them client-side on first
+// encounter and cache the vectors in IndexedDB keyed by article id.
 
-import { FEED_URL } from "../config.js";
+import { POCKET_API_URL, POCKET_SURFACE } from "../config.js";
 import { embedBatch } from "./embedder.js";
 import {
   getFeedEmbeddings, putFeedEmbeddings, pruneFeedEmbeddings,
 } from "./storage.js";
 
 const DIM = 384;
-// Min freshness: don't refetch the feed more often than this from the same
-// background context. The Worker also caches with its own cadence.
-const FEED_TTL_MS = 5 * 60 * 1000;
+// Content updates roughly every few hours; no need to re-fetch too often.
+const FEED_TTL_MS = 15 * 60 * 1000;
 
-let corpus = null;          // [{ id, title, body_excerpt, source, published_at, url, image_url, embedding (Float32Array) }]
+const SECTIONS_QUERY = `query GetSections($filters: SectionFilters!) {
+  getSections(filters: $filters) {
+    title
+    sectionItems {
+      corpusItem {
+        id url title excerpt publisher topic
+        imageUrl datePublished isTimeSensitive
+        timeToRead
+        authors { name }
+      }
+    }
+  }
+}`;
+
+let corpus = null;          // [{ id, title, body_excerpt, source, published_at, url, image_url, topic, embedding (Float32Array) }]
 let corpusVectors = null;    // Float32Array of length corpus.length * DIM
 let loadPromise = null;
 let lastLoadedAt = 0;
@@ -27,7 +40,54 @@ export function feedAge() {
 }
 
 function docText(a) {
-  return [a.title, a.description, a.body_excerpt].filter(Boolean).join("\n\n");
+  return [a.title, a.body_excerpt].filter(Boolean).join("\n\n");
+}
+
+// Normalize a Pocket corpusItem into our internal article shape.
+function normalizePocketItem(item, sectionTitle) {
+  if (!item || !item.url || !item.title) return null;
+  return {
+    id: item.id,
+    title: item.title,
+    description: item.excerpt || "",
+    body_excerpt: item.excerpt || "",
+    source: item.publisher || "",
+    author: (item.authors || []).map((a) => a.name).join(", "),
+    published_at: item.datePublished || "",
+    url: item.url,
+    image_url: item.imageUrl || "",
+    topic: item.topic || null,
+    section: sectionTitle,
+    time_sensitive: !!item.isTimeSensitive,
+  };
+}
+
+async function fetchPocketSections() {
+  const res = await fetch(POCKET_API_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: SECTIONS_QUERY,
+      variables: { filters: { scheduledSurfaceGuid: POCKET_SURFACE } },
+    }),
+  });
+  if (!res.ok) throw new Error(`Pocket API failed: ${res.status}`);
+  const json = await res.json();
+  if (json.errors) throw new Error(`Pocket GraphQL error: ${json.errors[0].message}`);
+  const sections = json.data?.getSections;
+  if (!Array.isArray(sections)) throw new Error("unexpected Pocket response shape");
+
+  // Flatten sections → articles, deduping by URL.
+  const byUrl = new Map();
+  for (const section of sections) {
+    // Skip A/B test variants.
+    if (/__exp/.test(section.title)) continue;
+    for (const si of section.sectionItems || []) {
+      const a = normalizePocketItem(si.corpusItem, section.title);
+      if (a && !byUrl.has(a.url)) byUrl.set(a.url, a);
+    }
+  }
+  return Array.from(byUrl.values());
 }
 
 export async function loadCorpus({ force = false } = {}) {
@@ -35,10 +95,7 @@ export async function loadCorpus({ force = false } = {}) {
   if (loadPromise) return loadPromise;
   loadPromise = (async () => {
     const t0 = performance.now();
-    const res = await fetch(FEED_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error(`feed fetch failed: ${res.status}`);
-    const feed = await res.json();
-    const articles = Array.isArray(feed.articles) ? feed.articles : [];
+    const articles = await fetchPocketSections();
     if (!articles.length) throw new Error("feed has no articles");
 
     const ids = articles.map((a) => a.id);
