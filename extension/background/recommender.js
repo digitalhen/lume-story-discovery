@@ -113,13 +113,23 @@ export async function loadCorpus({ force = false } = {}) {
       }
     }
     if (missing.length) {
+      const BATCH = 16;
       const tEmbed = performance.now();
-      const vectors = await embedBatch(missing.map((i) => docText(articles[i])));
+      const allVectors = [];
+      for (let b = 0; b < missing.length; b += BATCH) {
+        const chunk = missing.slice(b, b + BATCH);
+        const vecs = await embedBatch(chunk.map((i) => docText(articles[i])));
+        allVectors.push(...vecs);
+        console.log(
+          `[disco] embedded batch ${Math.floor(b / BATCH) + 1}/${Math.ceil(missing.length / BATCH)} ` +
+          `(${Math.min(b + BATCH, missing.length)}/${missing.length})`
+        );
+      }
       for (let k = 0; k < missing.length; k++) {
-        articles[missing[k]].embedding = vectors[k];
+        articles[missing[k]].embedding = allVectors[k];
       }
       await putFeedEmbeddings(
-        missing.map((i, k) => ({ id: articles[i].id, embedding: vectors[k] }))
+        missing.map((i, k) => ({ id: articles[i].id, embedding: allVectors[k] }))
       );
       console.log(
         `[disco] embedded ${missing.length} new feed articles in ` +
