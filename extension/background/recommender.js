@@ -69,6 +69,7 @@ async function fetchPocketSections() {
     body: JSON.stringify({
       query: SECTIONS_QUERY,
       variables: { filters: { scheduledSurfaceGuid: POCKET_SURFACE } },
+      consumer_key: "40249-e88c401e1b1f2242d9e441c4",
     }),
   });
   if (!res.ok) throw new Error(`Pocket API failed: ${res.status}`);
