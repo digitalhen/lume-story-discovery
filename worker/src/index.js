@@ -6,7 +6,7 @@
 //
 // No API key required — uses Firefox's well-known public consumer_key.
 
-const POCKET_API = "https://client-api.getpocket.com/";
+const POCKET_API = "https://client-api.getpocket.com";
 const POCKET_SURFACE = "NEW_TAB_EN_US";
 
 const SECTIONS_QUERY = `query GetSections($filters: SectionFilters!) {
