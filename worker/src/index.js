@@ -67,14 +67,10 @@ export default {
 async function refreshFeed(env) {
   const res = await fetch(POCKET_API, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "consumer_key": CONSUMER_KEY,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       query: SECTIONS_QUERY,
       variables: { filters: { scheduledSurfaceGuid: POCKET_SURFACE } },
-      consumer_key: CONSUMER_KEY,
     }),
   });
   if (!res.ok) {
