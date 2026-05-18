@@ -67,7 +67,10 @@ export default {
 async function refreshFeed(env) {
   const res = await fetch(POCKET_API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "User-Agent": "Mozilla/5.0 (compatible; lume-story-discovery/0.1)",
+    },
     body: JSON.stringify({
       query: SECTIONS_QUERY,
       variables: { filters: { scheduledSurfaceGuid: POCKET_SURFACE } },
