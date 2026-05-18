@@ -69,7 +69,7 @@ async function refreshFeed(env) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "User-Agent": "Mozilla/5.0 (compatible; lume-story-discovery/0.1)",
+      "consumer_key": CONSUMER_KEY,
     },
     body: JSON.stringify({
       query: SECTIONS_QUERY,
