@@ -1,3 +1,4 @@
-// Pocket's public GraphQL API — no auth required.
-export const POCKET_API_URL = "https://client-api.getpocket.com/";
-export const POCKET_SURFACE = "NEW_TAB_EN_US";
+// Edit this after deploying the worker (see worker/README.md).
+// Use the URL printed by `wrangler deploy`.
+export const FEED_URL =
+  "https://story-discovery-feed.digitalhen.workers.dev/feed.json";

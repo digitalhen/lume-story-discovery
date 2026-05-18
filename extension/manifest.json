@@ -61,5 +61,5 @@
     "lib/ort-wasm-simd-threaded.jsep.wasm"
   ],
 
-  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://client-api.getpocket.com; img-src 'self' data: https://* http://*"
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; connect-src 'self' https://huggingface.co https://*.huggingface.co https://*.hf.co https://story-discovery-feed.digitalhen.workers.dev; img-src 'self' data: https://* http://*"
 }
