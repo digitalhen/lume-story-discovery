@@ -137,7 +137,7 @@ async function refresh() {
 
   const res = await browser.runtime.sendMessage({ type: "getRecommendations" });
   if (!res?.ok) {
-    $loading.textContent = `Couldn't load recommendations (${res?.reason || "unknown"}).`;
+    $loading.textContent = `Couldn't load recommendations: ${res?.error || res?.reason || "unknown"}`;
     return;
   }
   $grid.innerHTML = res.recommendations.map(renderCard).join("");
