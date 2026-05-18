@@ -8,7 +8,6 @@
 
 const POCKET_API = "https://client-api.getpocket.com/";
 const POCKET_SURFACE = "NEW_TAB_EN_US";
-const CONSUMER_KEY = "40249-e88c401e1b1f2242d9e441c4";
 
 const SECTIONS_QUERY = `query GetSections($filters: SectionFilters!) {
   getSections(filters: $filters) {
@@ -67,7 +66,11 @@ export default {
 async function refreshFeed(env) {
   const res = await fetch(POCKET_API, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "apollographql-client-name": "lume-story-discovery",
+      "apollographql-client-version": "0.1.0",
+    },
     body: JSON.stringify({
       query: SECTIONS_QUERY,
       variables: { filters: { scheduledSurfaceGuid: POCKET_SURFACE } },
