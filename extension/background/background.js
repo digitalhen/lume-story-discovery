@@ -143,12 +143,7 @@ async function handleCapture(msg, sender) {
 }
 
 async function handleRecommendations() {
-  try {
-    await loadCorpus();
-  } catch (e) {
-    console.error("[disco] loadCorpus failed in handleRecommendations:", e);
-    return { ok: false, reason: "corpus-not-loaded", error: String(e) };
-  }
+  await loadCorpus().catch(() => null);
   if (!corpusLoaded()) return { ok: false, reason: "corpus-not-loaded" };
   const sinceTs = Date.now() - 30 * 24 * 3600 * 1000;
   const pages = await getAllPages();

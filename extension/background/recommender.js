@@ -1,9 +1,8 @@
 // Live feed loading + nearest-neighbor matching + MMR diversification.
 //
-// The feed is fetched from our Worker proxy (see worker/), which caches
-// Pocket's curated article sections. Articles arrive without embeddings;
-// we embed them client-side on first encounter and cache the vectors in
-// IndexedDB keyed by article id.
+// The feed is fetched from our Worker proxy (see worker/), which caches NewsAPI
+// top-headlines. Articles arrive without embeddings; we embed them client-side
+// on first encounter and cache the vectors in IndexedDB keyed by article id.
 
 import { FEED_URL } from "../config.js";
 import { embedBatch } from "./embedder.js";
@@ -12,10 +11,9 @@ import {
 } from "./storage.js";
 
 const DIM = 384;
-const EMBED_BATCH = 16;
 // Min freshness: don't refetch the feed more often than this from the same
 // background context. The Worker also caches with its own cadence.
-const FEED_TTL_MS = 15 * 60 * 1000;
+const FEED_TTL_MS = 5 * 60 * 1000;
 
 let corpus = null;          // [{ id, title, body_excerpt, source, published_at, url, image_url, embedding (Float32Array) }]
 let corpusVectors = null;    // Float32Array of length corpus.length * DIM
@@ -59,21 +57,12 @@ export async function loadCorpus({ force = false } = {}) {
     }
     if (missing.length) {
       const tEmbed = performance.now();
-      const allVectors = [];
-      for (let b = 0; b < missing.length; b += EMBED_BATCH) {
-        const chunk = missing.slice(b, b + EMBED_BATCH);
-        const vecs = await embedBatch(chunk.map((i) => docText(articles[i])));
-        allVectors.push(...vecs);
-        console.log(
-          `[disco] embedded batch ${Math.floor(b / EMBED_BATCH) + 1}/${Math.ceil(missing.length / EMBED_BATCH)} ` +
-          `(${Math.min(b + EMBED_BATCH, missing.length)}/${missing.length})`
-        );
-      }
+      const vectors = await embedBatch(missing.map((i) => docText(articles[i])));
       for (let k = 0; k < missing.length; k++) {
-        articles[missing[k]].embedding = allVectors[k];
+        articles[missing[k]].embedding = vectors[k];
       }
       await putFeedEmbeddings(
-        missing.map((i, k) => ({ id: articles[i].id, embedding: allVectors[k] }))
+        missing.map((i, k) => ({ id: articles[i].id, embedding: vectors[k] }))
       );
       console.log(
         `[disco] embedded ${missing.length} new feed articles in ` +
