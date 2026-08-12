@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lume — Privacy Policy</title>
+<style>
+  :root { color-scheme: light dark; --fg:#16181d; --muted:#5b616b; --bg:#f5f5f2; --card:#fff; --border:#e6e5e0; --accent:#c2410c; }
+  @media (prefers-color-scheme: dark) { :root { --fg:#ececed; --muted:#9aa0aa; --bg:#0c0e12; --card:#171a20; --border:#262a31; --accent:#fbbf24; } }
+  * { box-sizing: border-box; }
+  html,body { margin:0; background:var(--bg); color:var(--fg); }
+  body { font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:720px; margin:0 auto; padding:56px 24px 96px; }
+  .brand { display:flex; align-items:center; gap:12px; margin-bottom:28px; }
+  .brand svg { border-radius:9px; box-shadow:0 2px 10px rgba(10,22,38,.28); }
+  h1 { font-size:28px; letter-spacing:-.02em; margin:0; }
+  .updated { color:var(--muted); font-size:13px; margin:4px 0 0; }
+  h2 { font-size:18px; margin:36px 0 8px; letter-spacing:-.01em; }
+  p, li { color:var(--fg); }
+  .muted { color:var(--muted); }
+  a { color:var(--accent); }
+  code { background:var(--card); border:1px solid var(--border); border-radius:5px; padding:1px 5px; font-size:13.5px; }
+  .lead { font-size:17px; }
+  ol,ul { padding-left:22px; }
+  hr { border:0; border-top:1px solid var(--border); margin:40px 0; }
+  .foot { color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <rect width="64" height="64" rx="14" fill="#0a1626"/>
+        <g stroke="#f59e0b" stroke-width="1.4" opacity="0.4" fill="none">
+          <line x1="32" y1="32" x2="14" y2="22"/><line x1="32" y1="32" x2="48" y2="18"/>
+          <line x1="32" y1="32" x2="50" y2="44"/><line x1="32" y1="32" x2="18" y2="46"/>
+        </g>
+        <circle cx="14" cy="22" r="2.6" fill="#94a3b8"/><circle cx="48" cy="18" r="2.6" fill="#94a3b8"/>
+        <circle cx="50" cy="44" r="2.6" fill="#94a3b8"/><circle cx="18" cy="46" r="2.6" fill="#94a3b8"/>
+        <circle cx="32" cy="32" r="6" fill="#fbbf24"/>
+      </svg>
+      <div>
+        <h1>Lume — Privacy Policy</h1>
+        <p class="updated">Last updated: 12 August 2026</p>
+      </div>
+    </div>
+
+    <p class="lead">Lume is designed so that your browsing never leaves your device. This policy explains, plainly, what the extension does and does not do with your data.</p>
+
+    <h2>What Lume does</h2>
+    <p>As you browse, Lume notices pages you spend time reading and extracts a small text signal from them (the page title, headings, and meta description). It converts that text into a numerical embedding using a small open-source AI model (<code>Xenova/all-MiniLM-L6-v2</code>) that runs <strong>entirely inside your browser</strong>, and matches it against a public news feed to recommend related stories.</p>
+
+    <h2>Data we collect or transmit</h2>
+    <p><strong>None.</strong> Lume does not collect, sell, share, or transmit your personal data or browsing activity to the developer or any third party.</p>
+    <ul>
+      <li>Page text, embeddings, your reading history, muted sites, and the recommendation ranking are stored locally in your browser (IndexedDB) and never sent anywhere.</li>
+      <li>All embedding and matching happen on your device.</li>
+      <li>There is no account, no sign-in, no analytics, and no tracking.</li>
+    </ul>
+
+    <h2>Network requests</h2>
+    <p>The only outbound network requests Lume makes are:</p>
+    <ol>
+      <li><strong>News feed</strong> — periodic requests to our Cloudflare Worker (<code>story-discovery-feed.digitalhen.workers.dev</code>) that serves a public list of news articles. These requests contain <strong>no information about you or the pages you have read</strong>; they only fetch the public feed.</li>
+      <li><strong>Model download</strong> — a one-time download of the open-source embedding model from <code>huggingface.co</code> (and its CDN on <code>*.hf.co</code>). After this download the model is cached and runs offline.</li>
+    </ol>
+    <p class="muted">No other hosts are contacted.</p>
+
+    <h2>Data storage and deletion</h2>
+    <p>All data is stored locally on your device. You can remove it at any time using the <strong>“Clear all data”</strong> button on Lume’s Discovery page, or by removing the extension.</p>
+
+    <h2>Permissions</h2>
+    <p>Lume requests only the access it needs to work: to read the pages you view (so it can recommend related reading), to run the on-device model, and to fetch the public news feed. It does not use this access for any other purpose.</p>
+
+    <h2>Changes</h2>
+    <p>If this policy changes, the updated version will be posted here with a new date.</p>
+
+    <h2>Contact</h2>
+    <p>Questions? Open an issue on the <a href="https://github.com/digitalhen/lume-story-discovery">project repository</a>.</p>
+
+    <hr>
+    <p class="foot">Lume — what to read next, locally.</p>
+  </div>
+</body>
+</html>
